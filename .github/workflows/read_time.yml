@@ -20,7 +20,6 @@ jobs:
       CC_URL: ${{ secrets.CC_URL }}
       CC_ID: ${{ secrets.CC_ID }}
       CC_PASSWORD: ${{ secrets.CC_PASSWORD }}
-      HEATMAP_BLOCK_ID: ${{ secrets.HEATMAP_BLOCK_ID }}
       BOOK_DATABASE_NAME: ${{ vars.BOOK_DATABASE_NAME }}
       AUTHOR_DATABASE_NAME: ${{ vars.AUTHOR_DATABASE_NAME }}
       CATEGORY_DATABASE_NAME: ${{ vars.CATEGORY_DATABASE_NAME }}
@@ -33,7 +32,6 @@ jobs:
       DAY_DATABASE_NAME: ${{ vars.DAY_DATABASE_NAME }}
       REF: ${{ github.ref }}
       REPOSITORY: ${{ github.repository }}
-      YEAR: ${{ vars.YEAR }}
 
     steps:
       - name: Checkout
@@ -49,13 +47,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Remove folder
-        run: rm -rf ./OUT_FOLDER
-
-      - name: Set default year if not provided
-        if: env.YEAR == ''
-        run: echo "YEAR=$(date +"%Y")" >> $GITHUB_ENV
-
       - name: Debug - Check WEREAD_COOKIE
         run: |
           if [ -z "$WEREAD_COOKIE" ]; then
@@ -63,29 +54,7 @@ jobs:
           else
             echo "✅ WEREAD_COOKIE is set"
             echo "   Length: ${#WEREAD_COOKIE} characters"
-            echo "   First 50 chars: ${WEREAD_COOKIE:0:50}..."
           fi
-
-      - name: weread heatmap
-        run: |
-          github_heatmap weread --year $YEAR --without-type-name --background-color=${{ vars.background_color || '#FFFFFF' }} --track-color=${{ vars.track_color || '#ACE7AE' }} --special-color1=${{ vars.special_color || '#69C16E' }} --special-color2=${{ vars.special_color2 || '#549F57' }} --dom-color=${{ vars.dom_color || '#EBEDF0' }} --text-color=${{ vars.text_color || '#000000' }}
-
-      - name: Rename weread.svg to a random name
-        run: |
-          cd OUT_FOLDER
-          find . -type f ! -name "weread.svg" -exec rm -f {} +
-          cd ..
-          RANDOM_FILENAME=$(uuidgen).svg
-          mv ./OUT_FOLDER/weread.svg ./OUT_FOLDER/$RANDOM_FILENAME
-          echo "Renamed file to $RANDOM_FILENAME"
-
-      - name: Push heatmap
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git add .
-          git commit -m 'add new heatmap' || echo "nothing to commit"
-          git push || echo "nothing to push"
 
       - name: read time sync
         run: |
