@@ -3,11 +3,10 @@ name: weread note sync
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 */2 * * *'
-  concurrency:
-    group: ${{ github.workflow }}-${{ github.ref }}
-    cancel-in-progress: true
-
+    - cron: '0 */2 * * *'  # 每 2 小时执行一次
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   sync:
     name: Sync
@@ -29,33 +28,23 @@ jobs:
       WEEK_DATABASE_NAME: ${{ vars.WEEK_DATABASE_NAME }}
       MONTH_DATABASE_NAME: ${{ vars.MONTH_DATABASE_NAME }}
       DAY_DATABASE_NAME: ${{ vars.DAY_DATABASE_NAME }}
+      REF: ${{ github.ref }}
+      REPOSITORY: ${{ github.repository }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: 3.11
-
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          echo "=== Installed packages ==="
-          pip list | grep -E "weread|notion"
-          echo "=== Check commands ==="
-          which weread || echo "weread command not found"
-          which book || echo "book command not found"
-          echo "=== Try Python module ==="
-          python -c "import weread2notionpro; print('weread2notionpro imported successfully')"
-
-      - name: weread book sync (using python module)
+      - name: weread book sync
         run: |
-          python -m weread2notionpro.cli book || echo "book command failed"
-        continue-on-error: true
-
-      - name: weread sync (using python module)
+          book
+      - name: weread sync
         run: |
-          python -m weread2notionpro.cli weread || echo "weread command failed"
-        continue-on-error: true
+          weread
+      
